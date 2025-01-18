@@ -152,7 +152,7 @@ function draw() {
         rotateX(beta);
         rotateY(-alpha);
         translate(scale*ball_size, scale*ball_size, scale*ball_size);
-        textSize((applyRotations(coords)[2] + 800) / 20);
+        textSize(Math.sqrt(applyRotations(coords)[2] + 800) * 1.5);
         text(highlighted_node, 0, 0);
     }
 
