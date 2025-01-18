@@ -3,12 +3,24 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Maps</title>
+        <title>Maps with p5</title>
         <link href="style.css" rel="stylesheet">
     </head>
     <body>
-        <canvas id="canvas" width="800" height="800"></canvas>
+        <main> </main>
+        <div id="buttons">
+            <button type="button">Z101</button>
+            <button type="button">K115</button>
+            <!-- <button type="button">S120</button> -->
+        </div>
+        <div id="frame_rate"></div>
+        <div id="input_wrap">
+            <input type="text" id="input" placeholder="Z101...">
+            <button type="button" id="search">SEARCH</button>
+        </div>
 
+
+        <script src="https://tetimiki.hu/p5/p5.min.js"></script>
         <script src="data.js"></script>
         <script src="script.js"></script>
     </body>
