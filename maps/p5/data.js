@@ -6,6 +6,13 @@ const colors = {
     "white": "#FFF",
     "blue": "cornflowerblue",
     "red": "#ec6767",
+    "green": "green",
+}
+
+const paths = {
+    Z101: ["BA111", "BA107", "BA102", "BA35", "BA33", "BA23", "BA16"],
+    K115: ["BA228", "BA211", "BA207", "BA202", "BA35", "BA33", "BA12"],
+    S120: ["BA37", "BA19", "BA23", "BA33", "BA35", "BA102", "BA103"],
 }
 
 const nodes = [
