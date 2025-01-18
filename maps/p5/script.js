@@ -105,7 +105,7 @@ function draw() {
 }
 
 function setup() {
-    createCanvas(800, 800, WEBGL);
+    createCanvas(.9 * Math.min(window.innerHeight, window.innerWidth), .9 * Math.min(window.innerHeight, window.innerWidth), WEBGL);
 }
 
 document.addEventListener("pointerdown", down);
