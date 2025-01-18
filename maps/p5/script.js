@@ -1,7 +1,7 @@
 let pointer_down = false;
 let alpha = 0, beta = 0, d_a = 0, d_b = 0, dt = 0.01, dampening = .97;
 const center = [0, 400, 0];
-const scale = 2;
+const scale = Math.min(window.innerHeight, window.innerWidth) / 400;
 const sensitivity = 0.01;
 
 const down = (e) => { pointer_down = true; };
