@@ -14,11 +14,21 @@
             width: 100vw;
             height: 100vh;
             position: absolute;
+            z-index: 0;
+        }
+
+        #buttons {
+            position: absolute;
+            z-index: 1;
         }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
+
+    <div id="buttons">
+        <button type="button" d-id="Z101">Hello world</button> 
+    </div>
 
     <script src="data.js"></script>
     <script src="script.js"></script>
