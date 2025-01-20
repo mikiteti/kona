@@ -1,7 +1,7 @@
 console.log(`Controls:
 Move camera with w (forward), a (left), s (backward), d (right), q (up), e (down).
 Orient camera with arrow keys.
-To move slower, hold 1, 2, 3 or 4.
+To change speed, press 1, 2, 3, 4 or 5.
 `)
 const center = [205.13, 6.20, 385.15];
 const ball_size = 0.25;
@@ -352,7 +352,8 @@ let x = 0,
     alpha = -.35, 
     beta = -1.87, 
     camX = [], 
-    camY = [];
+    camY = []
+    speed = .4;
 const loop = () => {
     setInterval(() => {
         x += dx;
@@ -380,14 +381,10 @@ const loop = () => {
         camX_rev[2][1] *= -1;
         camY_rev[0][2] *= -1;
         camY_rev[2][0] *= -1;
-        let speed = 1;
         // if (camera_pos[0]+center[0] > 67 && camera_pos[0]+center[0] < 316 && camera_pos[1]+center[1] > 0 && camera_pos[1]+center[1] < 14 && camera_pos[2]+center[2] < 431 && camera_pos[2]+center[2] > 338) {
         //     speed = 0.1;
         //     console.log("inside");
         // }
-        for (let i = 1; i < 4; i++) {
-            if (pressed_keys.includes(String(i))) speed = i / 5;
-        }
         if (pressed_keys.includes("w")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, 0, -speed])));
         if (pressed_keys.includes("s")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, 0, speed])));
         if (pressed_keys.includes("a")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [speed, 0, 0])));
@@ -476,4 +473,23 @@ document.addEventListener("keydown", (e) => {
 });
 document.addEventListener("keyup", (e) => {
     pressed_keys.splice(pressed_keys.indexOf(e.key), 1);
+});
+document.addEventListener("keypress", (e) => {
+    switch (e.key) {
+        case "1":
+            speed = .2;
+            break;
+        case "2":
+            speed = .4;
+            break;
+        case "3":
+            speed = .6;
+            break;
+        case "4":
+            speed = .8;
+            break;
+        case "5":
+            speed = 1;
+            break;
+    }
 })
