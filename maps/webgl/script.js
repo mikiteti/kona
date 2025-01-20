@@ -1,4 +1,4 @@
-const center = [105.13, 6.20, 385.15];
+const center = [205.13, 6.20, 385.15];
 const ball_size = 0.25;
 const door_size = [.25,.5];
 const canvas = document.getElementById("canvas");
@@ -50,14 +50,14 @@ const uniforms = [
         data: [
             1,1,1,1,
             0.98,0.886,0.447,1,
-            0.886,0.408,0.369,1,
-            0.478,0.592,0.776,1,
             0.502,0.745,0.698,1,
+            0.478,0.592,0.776,1,
+            0.886,0.408,0.369,1,
 
             0.98,0.886,0.447, .2,
-            0.886,0.408,0.369,.2,
-            0.478,0.592,0.776,.2,
             0.502,0.745,0.698,.2,
+            0.478,0.592,0.776,.2,
+            0.886,0.408,0.369,.2,
         ],
         type: "4fv",
     },
@@ -185,11 +185,11 @@ const setup_data = () => {
         switch (node.id[0]) {
             case "S":
                 return 1;
-            case "P":
+            case "Z":
                 return 2;
             case "K":
                 return 3;
-            case "Z":
+            case "P":
                 return 4;
         }
 
@@ -300,6 +300,21 @@ const setup_data = () => {
             add_triangle(coords, floor + 5);
         }
     }
+
+    const add_outline = (coords, color) => {
+        attributes[0].data.push(...coords);
+        for (let i = 0; i < coords.length; i+=3) attributes[1].data.push(color);
+    }
+
+    for (const out of outlines) {
+        out.ends = [attributes[0].data.length];
+        let coords = [];
+        for (let i in out.coords) {
+            coords.push(out.coords[i] - center[i%3]);
+        }
+        add_outline(coords, out.color);
+        out.ends.push(attributes[0].data.length);
+    }
 }
 
 const floors = [];
@@ -331,6 +346,9 @@ const loop = () => {
         if (document.getElementById("floor2").checked) attributes[0].draw(floors[1], floors[2]);
         if (document.getElementById("floor3").checked) attributes[0].draw(floors[2], floors[3]);
         if (document.getElementById("floor4").checked) attributes[0].draw(floors[3], floors[4]);
+        for (let out of outlines) {
+            gl.drawArrays(gl.LINE_LOOP, out.ends[0] / 3, (out.ends[1] - out.ends[0]) / 3);
+        }
         // attributes[0].draw(0, attributes[0].data.length);
     }, 10);
 }

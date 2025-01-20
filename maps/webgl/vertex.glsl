@@ -2,6 +2,7 @@ precision mediump float;
 
 attribute vec3 a_position;
 attribute float a_color;
+attribute vec3 a_normal;
 
 uniform vec3 u_offset;
 uniform vec3 u_light;
