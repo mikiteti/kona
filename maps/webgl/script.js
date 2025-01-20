@@ -83,7 +83,7 @@ const attributes = [
         size: 3,
         type: gl.FLOAT,
         normalize: true,
-    }
+    },
 ]
 
 canvas.width = window.innerWidth;
@@ -331,7 +331,7 @@ const loop = () => {
         if (document.getElementById("floor2").checked) attributes[0].draw(floors[1], floors[2]);
         if (document.getElementById("floor3").checked) attributes[0].draw(floors[2], floors[3]);
         if (document.getElementById("floor4").checked) attributes[0].draw(floors[3], floors[4]);
-        // attributes[0].draw(0, attributes[0].data.length)
+        // attributes[0].draw(0, attributes[0].data.length);
     }, 10);
 }
 
