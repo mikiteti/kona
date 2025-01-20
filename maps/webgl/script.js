@@ -48,13 +48,18 @@ const uniforms = [
         // "green": "#80beb2",
 
         data: [
-            1, 1, 1,
-            0.98,0.886,0.447,
-            0.886,0.408,0.369,
-            0.478,0.592,0.776,
-            0.502,0.745,0.698,
+            1,1,1,1,
+            0.98,0.886,0.447,1,
+            0.886,0.408,0.369,1,
+            0.478,0.592,0.776,1,
+            0.502,0.745,0.698,1,
+
+            0.98,0.886,0.447, .2,
+            0.886,0.408,0.369,.2,
+            0.478,0.592,0.776,.2,
+            0.502,0.745,0.698,.2,
         ],
-        type: "3fv",
+        type: "4fv",
     },
 ];
 
@@ -86,6 +91,8 @@ canvas.height = window.innerHeight;
 
 gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.CULL_FACE);
+gl.enable(gl.BLEND);
+gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
 
 const createShader = (gl, type, source) => {
@@ -120,8 +127,8 @@ const handleAttribute = (program, attr) => {
     gl.enableVertexAttribArray(location);
     gl.vertexAttribPointer(location, attr.size, attr.type, attr.normalize || false, attr.stride || 0, attr.offset || 0);
 
-    const draw = () => {
-        gl.drawArrays(attr.primitiveType || gl.TRIANGLES, gl.offset || 0, gl.size || attr.data.length);
+    const draw = (from, to) => {
+        gl.drawArrays(attr.primitiveType || gl.TRIANGLES, from/3, (to-from)/3); //gl.size || attr.data.length);
     }
 
     attr.location = location;
@@ -248,17 +255,27 @@ const setup_data = () => {
         add_triangle([...coords[0], ...coords[3], ...coords[2]], color);
     }
 
-    for (const n of nodes.filter(e => e.type == 0)) {
+    const floor_data = [
+        [1.6, 0.75],
+        [5.23, 4.38],
+        [8.53, 7.68],
+        [11.83, 10.98]
+    ]
+    let which_floor = 0;
+    for (const n of nodes) {
+        n.ends = [attributes[0].data.length];
+        if (floor_data[which_floor] && n.coords[1] >= floor_data[which_floor][1] - .01) {
+            which_floor++;
+            floors.push(attributes[0].data.length);
+        }
         const coords = [n.coords[0] - center[0], n.coords[1] - center[1], n.coords[2] - center[2]];
-        add_octahedron(coords, 0, 3);
+        n.type == 0 ? add_octahedron(coords, 0, 3) : add_rectangle(coords, 0, getColor(n));
+        n.ends.push(attributes[0].data.length);
     }
-
-    for (const n of nodes.filter(e => e.type == 1)) {
-        const coords = [n.coords[0] - center[0], n.coords[1] - center[1], n.coords[2] - center[2]];
-        add_rectangle(coords, 0, getColor(n));
-    }
+    floors.push(attributes[0].data.length);
 }
 
+const floors = [];
 let x = 0, y = 1, dx = 0, dy = 0, pointer_down = false, sensitivity = 0.01, damping = .97, camera_pos = [0, 0, 75];
 const loop = () => {
     attributes[0].draw();
@@ -283,7 +300,10 @@ const loop = () => {
             ...camera_pos
         ]);
 
-        attributes[0].draw();
+        if (document.getElementById("floor1").checked) attributes[0].draw(floors[0], floors[1]);
+        if (document.getElementById("floor2").checked) attributes[0].draw(floors[1], floors[2]);
+        if (document.getElementById("floor3").checked) attributes[0].draw(floors[2], floors[3]);
+        if (document.getElementById("floor4").checked) attributes[0].draw(floors[3], floors[4]);
     }, 10);
 }
 

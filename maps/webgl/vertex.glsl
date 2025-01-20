@@ -9,9 +9,9 @@ uniform vec3 u_light;
 uniform mat3 u_rotX;
 uniform mat3 u_rotY;
 uniform vec2 u_resolution;
-uniform vec3 u_colors[5];
+uniform vec4 u_colors[9];
 
-varying vec3 v_color;
+varying vec4 v_color;
 
 void main() {
     v_color = u_colors[int(a_color)];
