@@ -90,7 +90,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 gl.enable(gl.DEPTH_TEST);
-gl.enable(gl.CULL_FACE);
+// gl.enable(gl.CULL_FACE);
 gl.enable(gl.BLEND);
 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
@@ -251,8 +251,6 @@ const setup_data = () => {
 
         add_triangle([...coords[0], ...coords[2], ...coords[1]], color);
         add_triangle([...coords[0], ...coords[2], ...coords[3]], color);
-        add_triangle([...coords[0], ...coords[1], ...coords[2]], color);
-        add_triangle([...coords[0], ...coords[3], ...coords[2]], color);
     }
 
     const floor_data = [
@@ -273,6 +271,25 @@ const setup_data = () => {
         n.ends.push(attributes[0].data.length);
     }
     floors.push(attributes[0].data.length);
+
+    const floor_coords = [
+        141, 430, 
+        141, 339,
+        68, 339,
+        141, 430,
+        68, 430,
+        68, 339,
+    ];
+
+    for (let floor = 0; floor < 4; floor++) {
+        for (let i = 0; i < 2; i++) {
+            let offset = 1;
+            let coords = [floor_coords[6*i] - center[0], floor_data[floor][1] - offset - center[1], floor_coords[6*i+1] - center[2],
+                          floor_coords[6*i+2] - center[0], floor_data[floor][1] - offset - center[1], floor_coords[6*i+3] - center[2], 
+                          floor_coords[6*i+4] - center[0], floor_data[floor][1] - offset - center[1], floor_coords[6*i+5] - center[2]];
+            add_triangle(coords, floor + 5);
+        }
+    }
 }
 
 const floors = [];
@@ -304,6 +321,7 @@ const loop = () => {
         if (document.getElementById("floor2").checked) attributes[0].draw(floors[1], floors[2]);
         if (document.getElementById("floor3").checked) attributes[0].draw(floors[2], floors[3]);
         if (document.getElementById("floor4").checked) attributes[0].draw(floors[3], floors[4]);
+        // attributes[0].draw(0, attributes[0].data.length)
     }, 10);
 }
 
