@@ -1,3 +1,8 @@
+console.log(`Controls:
+Move camera with w (forward), a (left), s (backward), d (right), q (up), e (down).
+Orient camera with arrow keys.
+To move slower, hold 1, 2, 3 or 4.
+`)
 const center = [205.13, 6.20, 385.15];
 const ball_size = 0.25;
 const door_size = [.25,.5];
@@ -18,20 +23,22 @@ const uniforms = [
     },
     {
         name: "u_rotX",
-        data: [
-            1,0,0,
-            0,1,0,
-            0,0,1,
-        ],
+        data: [ 1, 0, 0, 0, 0.9995500337489875, 0.02999550020249566, 0, -0.02999550020249566, 0.9995500337489875 ],
         type: "Matrix3fv",
     },
     {
         name: "u_rotY",
-        data: [
-            1,0,0,
-            0,1,0,
-            0,0,1,
-        ],
+        data: [ 0.517219818079551, 0, 0.855852592322858, 0, 1, 0, -0.855852592322858, 0, 0.517219818079551 ],
+        type: "Matrix3fv",
+    },
+    {
+        name: "u_camX",
+        data: [],
+        type: "Matrix3fv",
+    },
+    {
+        name: "u_camY",
+        data: [],
         type: "Matrix3fv",
     },
     {
@@ -54,10 +61,10 @@ const uniforms = [
             0.478,0.592,0.776,1,
             0.886,0.408,0.369,1,
 
-            0.98,0.886,0.447, .2,
-            0.502,0.745,0.698,.2,
-            0.478,0.592,0.776,.2,
-            0.886,0.408,0.369,.2,
+            0.98,0.886,0.447, .4,
+            0.502,0.745,0.698,.4,
+            0.478,0.592,0.776,.4,
+            0.886,0.408,0.369,.4,
         ],
         type: "4fv",
     },
@@ -142,6 +149,7 @@ const handleUniform = (program, uni) => {
     uni.location = location;
 
     uni.set = (value) => {
+        uni.data = value;
         uni.type.includes("Matrix") ? gl["uniform" + uni.type](location, false, value) : gl["uniform" + uni.type](location, value);
     }
 
@@ -317,16 +325,76 @@ const setup_data = () => {
     }
 }
 
-const floors = [];
-let x = 0, y = 1, dx = 0, dy = 0, pointer_down = false, sensitivity = 0.01, damping = .97, camera_pos = [0, 0, 75];
-const loop = () => {
-    attributes[0].draw();
+const transform_point = (matrix, point) => {
+    return [
+        matrix[0][0] * point[0] + matrix[0][1] * point[1] + matrix[0][2] * point[2],
+        matrix[1][0] * point[0] + matrix[1][1] * point[1] + matrix[1][2] * point[2],
+        matrix[2][0] * point[0] + matrix[2][1] * point[1] + matrix[2][2] * point[2],
+    ];
+}
+const add_vectors = (v1, v2) => {
+    return [
+        v1[0] + v2[0],
+        v1[1] + v2[1],
+        v1[2] + v2[2],
+    ]
+}
 
+const floors = [];
+let x = 0, 
+    y = 1, 
+    dx = 0, 
+    dy = 0, 
+    pointer_down = false, 
+    sensitivity = 0.01, 
+    damping = .97, 
+    camera_pos = [ 146.39187853868904, -44, -70.18656853260983 ], 
+    alpha = -.35, 
+    beta = -1.87, 
+    camX = [], 
+    camY = [];
+const loop = () => {
     setInterval(() => {
         x += dx;
         y += dy;
         dx *= damping;
         dy *= damping;
+
+        if (pressed_keys.includes("ArrowLeft")) beta += 0.01;
+        if (pressed_keys.includes("ArrowRight")) beta -= 0.01;
+        if (pressed_keys.includes("ArrowDown")) alpha -= 0.01;
+        if (pressed_keys.includes("ArrowUp")) alpha += 0.01;
+
+        camX = [
+            [ 1,0,0, ],
+            [ 0,Math.cos(alpha),-Math.sin(alpha), ],
+            [ 0,Math.sin(alpha),Math.cos(alpha),  ],
+        ];
+        camY = [
+            [ Math.cos(beta),0,Math.sin(beta), ],
+            [ 0,1,0, ],
+            [ -Math.sin(beta),0,Math.cos(beta), ],
+        ]
+        let camX_rev = JSON.parse(JSON.stringify(camX)), camY_rev = JSON.parse(JSON.stringify(camY));
+        camX_rev[1][2] *= -1;
+        camX_rev[2][1] *= -1;
+        camY_rev[0][2] *= -1;
+        camY_rev[2][0] *= -1;
+        let speed = 1;
+        // if (camera_pos[0]+center[0] > 67 && camera_pos[0]+center[0] < 316 && camera_pos[1]+center[1] > 0 && camera_pos[1]+center[1] < 14 && camera_pos[2]+center[2] < 431 && camera_pos[2]+center[2] > 338) {
+        //     speed = 0.1;
+        //     console.log("inside");
+        // }
+        for (let i = 1; i < 4; i++) {
+            if (pressed_keys.includes(String(i))) speed = i / 5;
+        }
+        if (pressed_keys.includes("w")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, 0, -speed])));
+        if (pressed_keys.includes("s")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, 0, speed])));
+        if (pressed_keys.includes("a")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [speed, 0, 0])));
+        if (pressed_keys.includes("d")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [-speed, 0, 0])));
+        if (pressed_keys.includes("q")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, -speed, 0])));
+        if (pressed_keys.includes("e")) camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, speed, 0])));
+
 
         uniforms.find(uni => uni.name == "u_rotX").set([
             1,0,0,
@@ -340,6 +408,16 @@ const loop = () => {
         ]);
         uniforms.find(uni => uni.name == "u_offset").set([
             ...camera_pos
+        ]);
+        uniforms.find(uni => uni.name == "u_camX").set([
+            ...camX[0],
+            ...camX[1],
+            ...camX[2],
+        ]);
+        uniforms.find(uni => uni.name == "u_camY").set([
+            ...camY[0],
+            ...camY[1],
+            ...camY[2],
         ]);
 
         if (document.getElementById("floor1").checked) attributes[0].draw(floors[0], floors[1]);
@@ -391,3 +469,11 @@ document.addEventListener("click", (e) => {
 document.addEventListener("wheel", (e) => {
     camera_pos[2] *= 1.001 ** e.deltaY;
 });
+const pressed_keys = [];
+document.addEventListener("keydown", (e) => {
+    if (pressed_keys.includes(e.key)) return;
+    pressed_keys.push(e.key);
+});
+document.addEventListener("keyup", (e) => {
+    pressed_keys.splice(pressed_keys.indexOf(e.key), 1);
+})
