@@ -1,6 +1,6 @@
 const center = [105.13, 6.20, 385.15];
-const ball_size = 1;
-const door_size = [.5,1];
+const ball_size = 0.25;
+const door_size = [.25,.5];
 const canvas = document.getElementById("canvas");
 const gl = canvas.getContext("webgl");
 let vsSource, fsSource;
@@ -239,7 +239,7 @@ const setup_data = () => {
     const add_rectangle = (pos, orientation, color) => {
         const rot = [
             [1, 1/Math.sqrt(2), 0, -1/Math.sqrt(2)],
-            [0, -1/Math.sqrt(2), -1, 1/Math.sqrt(2)]
+            [0, -1/Math.sqrt(2), -1, -1/Math.sqrt(2)]
         ];
 
         let coords = [
@@ -267,7 +267,17 @@ const setup_data = () => {
             floors.push(attributes[0].data.length);
         }
         const coords = [n.coords[0] - center[0], n.coords[1] - center[1], n.coords[2] - center[2]];
-        n.type == 0 ? add_octahedron(coords, 0, 3) : add_rectangle(coords, 0, getColor(n));
+        let orientation = 0;
+        if (n.coords[2] >= 402.19 - .05 || n.coords[2] <= 372.76 + .05) orientation = 2;
+        else if (n.coords[2] >= 393.33 - 4.05 || n.coords[2] <= 380.39 + 4.05) {
+            orientation = 1;
+            let star_centers = [121.26, 184.465, 274.335];
+            let star_center = 0;
+            if (Math.abs(star_centers[1] - n.coords[0]) < Math.abs(star_centers[star_center] - n.coords[0])) star_center++;
+            if (Math.abs(star_centers[2] - n.coords[0]) < Math.abs(star_centers[star_center] - n.coords[0])) star_center++;
+            if (Math.sign(n.coords[0] - star_centers[star_center]) != Math.sign(n.coords[2] - center[2])) orientation = 3;
+        }
+        n.type == 0 ? add_octahedron(coords, 0, 3) : add_rectangle(coords, orientation, getColor(n));
         n.ends.push(attributes[0].data.length);
     }
     floors.push(attributes[0].data.length);
