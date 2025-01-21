@@ -424,7 +424,7 @@ const nodes = [
 
 const outlines = [
     {
-        color: 6,
+        color: 5,
         coords: [
             67.55, 0, 380.39,
             67.55, 0, 393.33,
@@ -469,7 +469,7 @@ const outlines = [
         ],
     },
     {
-        color: 7,
+        color: 6,
         coords: [
             67.55, 3.6, 380.39,
             67.55, 3.6, 393.33,
@@ -514,7 +514,7 @@ const outlines = [
         ],
     },
     {
-        color: 8,
+        color: 7,
         coords: [
             67.55, 6.93, 380.39,
             67.55, 6.93, 393.33,
@@ -559,7 +559,7 @@ const outlines = [
         ],
     },
     {
-        color: 9,
+        color: 8,
         coords: [
             67.55, 10.23, 380.39,
             67.55, 10.23, 393.33,
