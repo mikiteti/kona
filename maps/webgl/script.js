@@ -1,6 +1,7 @@
 console.log(`Controls:
 Move camera with w (forward), a (left), s (backward), d (right), q (up), e (down).
-Orient camera with arrow keys.
+Orient camera with mouse.
+Rotate model horizontally with mouse while pressing CTRL.
 To change speed, press 1, 2, 3, 4 or 5.
 `)
 const center = [205.13, 6.20, 385.15];
@@ -13,12 +14,12 @@ let vsSource, fsSource;
 const uniforms = [
     {
         name: "u_offset",
-        data: [ 0, 0, 75, ],
+        data: [ 0, 0, .75 ],
         type: "3fv",
     },
     {
         name: "u_light",
-        data: [ -1, -1, -1 ],
+        data: [1, -1, 0.5],
         type: "3fv",
     },
     {
@@ -61,10 +62,10 @@ const uniforms = [
             0.478,0.592,0.776,1,
             0.886,0.408,0.369,1,
 
-            0.98,0.886,0.447, .4,
-            0.502,0.745,0.698,.4,
-            0.478,0.592,0.776,.4,
-            0.886,0.408,0.369,.4,
+            .5*0.98, .5*0.886,.5*0.447, .5,
+            .5*0.502,.5*0.745,.5*0.698,.5,
+            .5*0.478,.5*0.592,.5*0.776,.5,
+            .5*0.886,.5*0.408,.5*0.369,.5,
         ],
         type: "4fv",
     },
@@ -91,6 +92,12 @@ const attributes = [
         type: gl.FLOAT,
         normalize: true,
     },
+    {
+        name: "a_noshade",
+        data: [],
+        size: 1,
+        type: gl.FLOAT,
+    }
 ]
 
 canvas.width = window.innerWidth;
@@ -188,17 +195,54 @@ fetch("./vertex.glsl").then(res => res.text()).then(data => {
     });
 });
 
+const reposition_nodes = (treshold = .5) => {
+    const scanners = nodes.filter(n => n.type == 0);
+    for (let i = 0; i < scanners.length-1; i++) {
+        for (let j = i+1; j < scanners.length; j++) {
+            let a = scanners[i].coords;
+            let b = scanners[j].coords;
+            let ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+            let dist = Math.hypot(...ab);
+            if (dist < treshold) {
+                let middle = [.5 * (a[0] + b[0]), .5 * (a[1] + b[1]), .5 * (a[2] + b[2])];
+                let scale = treshold/2 / dist;
+                ab = ab.map(c => scale * c);
+
+                scanners[i].coords = [middle[0] - ab[0], middle[1] - ab[1], middle[2] - ab[2]];
+                scanners[j].coords = [middle[0] + ab[0], middle[1] + ab[1], middle[2] + ab[2]];
+            }
+        }
+    }
+
+    for (let i in scanners) {
+        nodes[nodes.indexOf(nodes.find(e => e.id == scanners[i].id))].coords = scanners[i].coords;
+    }
+}
+
 const setup_data = () => {
+    reposition_nodes();
+    reposition_nodes();
+    reposition_nodes();
+    reposition_nodes();
+
     const getColor = (node) => {
+        let which_floor = 0;
+        while (floor_data[which_floor] && node.coords[1] >= floor_data[which_floor][1] - .01) {
+            which_floor++;
+        }
+        if (node.type == 0) {
+            return which_floor;
+        }
+        return which_floor+4;
         switch (node.id[0]) {
             case "S":
-                return 1;
+                return 5;
             case "Z":
-                return 2;
+                return 6;
             case "K":
-                return 3;
+                return 7;
             case "P":
-                return 4;
+                return 8;
         }
 
         return colors.white;
@@ -206,31 +250,49 @@ const setup_data = () => {
 
 
 
-    const add_triangle = (pos, color) => {
+    const add_triangle = (pos, color, noshade = 1) => {
         attributes.find(e => e.name == "a_position").data.push(...pos);
         attributes.find(e => e.name == "a_color").data.push(color, color, color);
-        // let v1 = [pos[0] - pos[3], pos[1] - pos[4], pos[2] - pos[5]];
-        // let v2 = [pos[0] - pos[6], pos[1] - pos[7], pos[2] - pos[8]];
-        // let normal = [
-        //     v1[1]*v2[2] - v1[2]*v2[1],
-        //     v1[2]*v2[0] - v1[0]*v2[2],
-        //     v1[0]*v2[1] - v1[1]*v2[0]
-        // ];
-        // attributes.find(e => e.name == "a_normal").data.push(...normal, ...normal, ...normal);
+        let normal;
+        let v1 = [pos[0] - pos[3], pos[1] - pos[4], pos[2] - pos[5]];
+        let v2 = [pos[0] - pos[6], pos[1] - pos[7], pos[2] - pos[8]];
+        normal = [
+            v1[1]*v2[2] - v1[2]*v2[1],
+            v1[2]*v2[0] - v1[0]*v2[2],
+            v1[0]*v2[1] - v1[1]*v2[0]
+        ];
+        attributes.find(e => e.name == "a_normal").data.push(...normal, ...normal, ...normal);
+        attributes.find(e => e.name == "a_noshade").data.push(noshade, noshade, noshade);
     }
 
     const add_octahedron = (pos, color1, color2 = color1) => {
-        const skeleton = [
-            [1,0,0, 0,0,1, 0,1,0],
-            [1,0,0, 0,1,0, 0,0,-1],
-            [1,0,0, 0,-1,0, 0,0,1],
-            [1,0,0, 0,0,-1, 0,-1,0],
-            [-1,0,0, 0,1,0, 0,0,1],
-            [-1,0,0, 0,0,-1, 0,1,0],
-            [-1,0,0, 0,0,1, 0,-1,0],
-            [-1,0,0, 0,-1,0, 0,0,-1]
+        const phi = (1+Math.sqrt(5)) / 2;
+        const vertices = [
+            [0, 0, 0, 0,           1, 1, -1, -1,         phi, phi, -phi, -phi], // x
+            [1, 1, -1, -1,         phi, -phi, phi, -phi, 0, 0, 0, 0], // y
+            [phi, -phi, phi, -phi, 0, 0, 0, 0,           1, -1, 1, -1], // z
         ];
-        const color_map = [ 0, 1, 1, 0, 1, 0, 0, 1 ];
+        const faces = [[0,2,8], [1,3,11], [0,2,10], [1,3,9], [0,4,8], [1,6,11], [2,5,8], [3,7,11], [0,6,10], [3,5,7], [4,8,9], [1,4,9], [2,5,7], [6,10,11], [0,4,6], [7,10,11], [5,8,9], [3,5,9], [2,7,10], [1,4,6]];
+        const size = 0.5;
+        // const skeleton = [
+        //     [1,0,0, 0,0,1, 0,1,0],
+        //     [1,0,0, 0,1,0, 0,0,-1],
+        //     [1,0,0, 0,-1,0, 0,0,1],
+        //     [1,0,0, 0,0,-1, 0,-1,0],
+        //     [-1,0,0, 0,1,0, 0,0,1],
+        //     [-1,0,0, 0,0,-1, 0,1,0],
+        //     [-1,0,0, 0,0,1, 0,-1,0],
+        //     [-1,0,0, 0,-1,0, 0,0,-1]
+        // ];
+        // const color_map = [ 0, 1, 1, 0, 1, 0, 0, 1 ];
+        const skeleton = [];
+        for (let f of faces) {
+            skeleton.push([
+                size*vertices[0][f[0]], size*vertices[1][f[0]], size*vertices[2][f[0]],
+                size*vertices[0][f[1]], size*vertices[1][f[1]], size*vertices[2][f[1]],
+                size*vertices[0][f[2]], size*vertices[1][f[2]], size*vertices[2][f[2]],
+            ]);
+        }
 
         for (let i in skeleton) {
             const face = skeleton[i];
@@ -240,7 +302,7 @@ const setup_data = () => {
                     face[3*i+j] += pos[j];
                 }
             }
-            add_triangle(face, [color1, color2][color_map[i]]);
+            add_triangle(face, color1, 0);
         }
     }
 
@@ -285,7 +347,7 @@ const setup_data = () => {
             if (Math.abs(star_centers[2] - n.coords[0]) < Math.abs(star_centers[star_center] - n.coords[0])) star_center++;
             if (Math.sign(n.coords[0] - star_centers[star_center]) != Math.sign(n.coords[2] - center[2])) orientation = 3;
         }
-        n.type == 0 ? add_octahedron(coords, 0, 3) : add_rectangle(coords, orientation, getColor(n));
+        n.type == 0 ? add_octahedron(coords, getColor(n)) : add_rectangle(coords, orientation, getColor(n));
         n.ends.push(attributes[0].data.length);
     }
     floors.push(attributes[0].data.length);
@@ -311,7 +373,10 @@ const setup_data = () => {
 
     const add_outline = (coords, color) => {
         attributes[0].data.push(...coords);
-        for (let i = 0; i < coords.length; i+=3) attributes[1].data.push(color);
+        for (let i = 0; i < coords.length; i+=3) {
+            attributes[1].data.push(color);
+            attributes.find(e => e.name == "a_noshade").data.push(1);
+        }
     }
 
     for (const out of outlines) {
@@ -354,6 +419,7 @@ let x = 0,
     camX = [], 
     camY = []
     speed = .4;
+let camX_rev, camY_rev;
 const loop = () => {
     setInterval(() => {
         x += dx;
@@ -376,7 +442,7 @@ const loop = () => {
             [ 0,1,0, ],
             [ -Math.sin(beta),0,Math.cos(beta), ],
         ]
-        let camX_rev = JSON.parse(JSON.stringify(camX)), camY_rev = JSON.parse(JSON.stringify(camY));
+        camX_rev = JSON.parse(JSON.stringify(camX)), camY_rev = JSON.parse(JSON.stringify(camY));
         camX_rev[1][2] *= -1;
         camX_rev[2][1] *= -1;
         camY_rev[0][2] *= -1;
@@ -432,17 +498,29 @@ const down = (e) => { pointer_down = true; };
 const up = (e) => { pointer_down = false };
 
 const move = (e) => {
-    if (!pointer_down) return;
-
-    if (!e.ctrlKey) {
-        dy = -e.movementX * sensitivity;
-        dx = -e.movementY * sensitivity;
+    if (!pointer_down) {
+        // beta -= e.movementX / 100;
+        // alpha -= e.movementY / 100;
 
         return;
     }
 
-    camera_pos[0] += e.movementX *100* sensitivity / camera_pos[2];
-    camera_pos[1] -= e.movementY *100* sensitivity / camera_pos[2];
+    if (!e.ctrlKey) {
+        beta += e.movementX / 300;
+        alpha += e.movementY / 300;
+
+        return;
+    }
+
+    if (e.ctrlKey) {
+        dy = -e.movementX * sensitivity;
+        // dx = -e.movementY * sensitivity;
+
+        return;
+    }
+
+    // camera_pos[0] += e.movementX *100* sensitivity / camera_pos[2];
+    // camera_pos[1] -= e.movementY *100* sensitivity / camera_pos[2];
 }
 
 const togglePath = (id) => {
@@ -464,7 +542,7 @@ document.addEventListener("click", (e) => {
     }
 });
 document.addEventListener("wheel", (e) => {
-    camera_pos[2] *= 1.001 ** e.deltaY;
+    camera_pos = add_vectors(camera_pos, transform_point(camY_rev, transform_point(camX_rev, [0, 0, speed * 10 * Math.sign(e.deltaY)])));
 });
 const pressed_keys = [];
 document.addEventListener("keydown", (e) => {
@@ -477,19 +555,19 @@ document.addEventListener("keyup", (e) => {
 document.addEventListener("keypress", (e) => {
     switch (e.key) {
         case "1":
-            speed = .2;
+            speed = .1;
             break;
         case "2":
-            speed = .4;
+            speed = .2;
             break;
         case "3":
-            speed = .6;
+            speed = .3;
             break;
         case "4":
-            speed = .8;
+            speed = .4;
             break;
         case "5":
-            speed = 1;
+            speed = .5;
             break;
     }
 })
