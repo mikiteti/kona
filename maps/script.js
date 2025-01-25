@@ -32,6 +32,15 @@ fetch("./vertex.glsl").then(res => res.text()).then(vs_source => {
 
 const loop = () => {
     check_movement_keys();
+    let rotations = {
+        ArrowLeft() { beta += rotcam_sensitivity * 3; },
+        ArrowRight() { beta -= rotcam_sensitivity * 3; },
+        ArrowUp() { alpha += rotcam_sensitivity * 3; },
+        ArrowDown() { alpha -= rotcam_sensitivity * 3; },
+    }
+
+    for (let i in rotations) if (pressed_keys.includes(i)) rotations[i]();
+
     let rotmat = assets.multiply_matrices(assets.get_rotmat(alpha, "x"), assets.get_rotmat(beta, "y"));
     uni.rotcam.data = [...rotmat[0], ...rotmat[1], ...rotmat[2]];
     uni.rotcam.set();
