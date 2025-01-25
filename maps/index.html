@@ -3,25 +3,35 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Maps with p5</title>
-        <link href="style.css" rel="stylesheet">
+        <title></title>
+
+        <style>
+            html, body {
+                margin: 0;
+                height: 100vh;
+                overflow: hidden;
+                background-image: linear-gradient(125deg, #225, #111);
+            }
+
+            canvas {
+                position: absolute;
+                height: 100vh;
+                width: 100vw;
+            }
+
+            #buttons {
+                color: white;
+                position: absolute;
+            }
+        </style>
     </head>
     <body>
-        <main> </main>
-        <div id="buttons">
-            <button type="button">Z101</button>
-            <button type="button">K115</button>
-            <!-- <button type="button">S120</button> -->
-        </div>
-        <div id="frame_rate"></div>
-        <div id="input_wrap">
-            <input type="text" id="input" placeholder="Z101...">
-            <button type="button" id="search">SEARCH</button>
-        </div>
-
-
-        <script src="https://tetimiki.hu/p5/p5.min.js"></script>
-        <script src="data.js"></script>
-        <script src="script.js"></script>
+        <canvas id="canvas"></canvas>    
+        <div id="buttons"></div>
+        
+        <script src="./assets.js"></script>
+        <script src="./data.js"></script>
+        <script src="./controls.js"></script>
+        <script src="./script.js"></script>
     </body>
 </html>

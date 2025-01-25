@@ -1,202 +1,71 @@
-let pointer_down = false;
-let alpha = 0, beta = Math.PI, d_a = 0, d_b = 0, dt = 0.01, dampening = .97;
-const center = [105.13, 6.20, 385.15];
-let camera_pos = [0, 0];
-let scale = Math.min(window.innerHeight, window.innerWidth) / 400 * 4; // take out * 3 later
-const sensitivity = 0.01;
-let ball_size = .25;
-const shownPaths = [];
-let highlighted_node;
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+gl.clearColor(0, 0, 0, 0);
 
-const down = (e) => { pointer_down = true; };
-const up = (e) => { pointer_down = false };
+fetch("./vertex.glsl").then(res => res.text()).then(vs_source => {
+    fetch("./fragment.glsl").then(res => res.text()).then(fs_source => {
+        const vertex_shader = assets.create_shader(gl, gl.VERTEX_SHADER, vs_source);
+        const fragment_shader = assets.create_shader(gl, gl.FRAGMENT_SHADER, fs_source);
 
-const move = (e) => {
-    if (!pointer_down) return;
+        const program = assets.create_program(gl, vertex_shader, fragment_shader);
 
-    if (!e.ctrlKey) {
-        d_a = e.movementX * sensitivity;
-        d_b = e.movementY * sensitivity;
+        gl.useProgram(program);
+        gl.enable(gl.DEPTH_TEST);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
-        return;
-    }
+        setup();
 
-    camera_pos[0] -= e.movementX;
-    camera_pos[1] -= e.movementY;
-}
-
-const getColor = (point) => {
-    if (point.type == 0) {
-        for (let j in shownPaths) {
-            if (shownPaths[j].find(e => e == point.id)) {
-                return colors.green;
-            }
-            return false;
+        for (const name in attr) {
+            assets.initiate_attribute(program, attr[name]);
         }
-        return colors.white;
-    }
 
-    switch (point.id[0]) {
-        case "S":
-            return colors.yellow;
-        case "P":
-            return colors.red;
-        case "K":
-            return colors.blue;
-        case "Z":
-            return colors.green;
-    }
-        
-    return colors.white;
-}
-
-const transformPoint = (matrix, point) => {
-    return [
-        matrix[0][0] * point[0] + matrix[0][1] * point[1] + matrix[0][2] * point[2],
-        matrix[1][0] * point[0] + matrix[1][1] * point[1] + matrix[1][2] * point[2],
-        matrix[2][0] * point[0] + matrix[2][1] * point[1] + matrix[2][2] * point[2],
-    ];
-}
-
-const applyRotations = (point) => {
-    const matrixA = [ // around Y
-        [Math.cos(alpha), 0, Math.sin(alpha)],
-        [0, 1, 0],
-        [-Math.sin(alpha), 0, Math.cos(alpha)],
-    ];
-    const matrixB = [ // around X
-        [1, 0, 0],
-        [0, Math.cos(beta), Math.sin(beta)],
-        [0, -Math.sin(beta), Math.cos(beta)],
-    ];
-
-    const transformed = transformPoint(matrixB, transformPoint(matrixA, point));
-
-    return transformed;
-}
-
-function draw() {
-    alpha += d_a;
-    beta += d_b;
-    d_a *= dampening;
-    d_b *= dampening;
-    d_a = 0;
-    d_b = 0;
-
-    background(0, 0, 0, 0);
-    //lights();
-    ambientLight(128, 128, 128);
-    directionalLight(128, 128, 128, 0, 0, -1);
-
-    translate(-camera_pos[0], -camera_pos[1], 0);
-
-    push();
-    rotateY(alpha);
-    rotateX(-beta);
-    for (const node of nodes) {
-        const vec = [scale * (node.coords[0] - center[0]), scale * (node.coords[1] - center[1]), scale * (node.coords[2] - center[2])];
-        translate(...vec);
-        if (node.type == 0) {
-            let my_color = getColor(node);
-            if (my_color) {
-                fill(my_color);
-                noStroke();
-                sphere(scale * ball_size);
-            }
-        } else {
-            stroke(getColor(node));
-            const weight = scale / 10;
-            strokeWeight(weight);
-            noFill();
-            const a = .15*scale;
-            const b = .4*scale;
-            const A = a + .5 * weight;
-            const B = b + .5 * weight;
-
-            //--
-            //+-
-            //++
-            //-+
-            line(-A, -b, 0, A, -b, 0);
-            line(a, -B, 0, a, B, 0);
-            line(A, b, 0, -A, b, 0);
-            line(-a, B, 0, -a, -B, 0);
-            //rect(-.15*scale, -.3*scale, .3*scale, .6*scale);
+        for (const name in uni) {
+            assets.initiate_uniform(program, uni[name]);
         }
-        translate(-vec[0], -vec[1], -vec[2]);
+
+        setInterval(() => {
+            loop();
+        }, 10);
+    });
+});
+
+const loop = () => {
+    check_movement_keys();
+    let rotmat = assets.multiply_matrices(assets.get_rotmat(alpha, "x"), assets.get_rotmat(beta, "y"));
+    uni.rotcam.data = [...rotmat[0], ...rotmat[1], ...rotmat[2]];
+    uni.rotcam.set();
+    let rotmodel = assets.get_rotmat(theta, "y");
+    uni.rotmodel.data = [...rotmodel];
+    uni.rotmodel.set();
+
+    for (const f of floor) {
+        gl.drawArrays(gl.LINE_LOOP, f.outline[0].ends[0], 40);
     }
+    for (const i in paths) {
+        const p = paths[i];
+        if (!p.active) continue;
 
-
-    stroke(colors.green);
-    strokeWeight(2);
-    for (const j in shownPaths) {
-        const path = shownPaths[j];
-        let p1 = nodes.find(e => e.id == path[0]).coords;
-        p1 = [scale * (p1[0] - center[0]), scale * (p1[1] - center[1]), scale * (p1[2] - center[2])];
-        for (let i = 0; i < path.length - 1; i++) {
-            let p2 = nodes.find(e => e.id == path[i+1]).coords;
-            p2 = [scale * (p2[0] - center[0]), scale * (p2[1] - center[1]), scale * (p2[2] - center[2])];
-            line(...p1, ...p2);
-            p1 = p2;
-        }
+        gl.drawArrays(gl.LINE_STRIP, p.ends[0], p.ends[1] - p.ends[0]);
     } 
-
-    pop();
-
-    if (highlighted_node) {
-        rotateY(alpha);
-        rotateX(-beta);
-        let coords = nodes.find(e => e.id == highlighted_node.toUpperCase()).coords; 
-        coords = [scale*(coords[0] - center[0]), scale*(coords[1] - center[1]), scale*(coords[2] - center[2])]
-        translate(...coords);
-        rotateX(beta);
-        rotateY(-alpha);
-        translate(scale*ball_size, scale*ball_size, scale*ball_size);
-        textSize(Math.sqrt(applyRotations(coords)[2] + 800) * 1.5);
-        text(highlighted_node, 0, 0);
-    }
-
-    document.getElementById("frame_rate").innerHTML = `fps: ${ parseInt(frameRate()) }`;
+    let end= nodes.find(e => e.type == 2).ends[0] - 1;
+    gl.drawArrays(gl.TRIANGLES, 0, end);
 }
 
-function setup() {
-    createCanvas(window.innerWidth, window.innerHeight, WEBGL);
-    textFont(font);
-    console.log()
-    textAlign(LEFT, BOTTOM);
-}
-
-let font;
-function preload() {
-    font = loadFont("font.ttf");
-}
-
-const togglePath = (id) => {
-    if (shownPaths[id]) {
-        delete shownPaths[id];
-        return;
+const setup = () => {
+    for (const n of nodes) {
+        n.ends = [attr.position.data.length/3];
+        switch (n.type) {
+            case 0:
+                assets.add_scanner(n.coords, n.floor);
+                break;
+            case 1:
+                assets.add_door(n.coords, n.orientation, n.floor + 4);
+                break;
+            case 2:
+                assets.add_outline(n.coords, n.floor + 4);
+                break;
+        }
+        n.ends.push(attr.position.data.length/3);
     }
-
-    const path_skeleton = paths[id];
-    const path = [];
-
-    for (let node_id of path_skeleton) {
-        path.push(nodes.find(e => e.id == node_id));
-    }
-
-    shownPaths[id] = path_skeleton;
 }
-
-document.addEventListener("pointerdown", down);
-document.addEventListener("pointerup", up);
-document.addEventListener("pointermove", move);
-document.addEventListener("click", (e) => {
-    if (e.target.matches("#buttons button")) {
-        togglePath(e.target.innerHTML);
-    } else if (e.target.matches("#search")) {
-        highlighted_node = document.getElementById("input").value;
-    }
-});
-document.addEventListener("wheel", (e) => {
-    scale *= 0.999 ** e.deltaY;
-});
