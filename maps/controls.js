@@ -48,6 +48,10 @@ const check_movement_keys = () => {
 
     uni.camera_pos.set();
 }
+document.addEventListener("wheel", (e) => {
+    let rotmat_rev = assets.multiply_matrices(assets.get_rotmat(-beta, "y"), assets.get_rotmat(-alpha, "x"));
+    uni.camera_pos.data = assets.add_vectors(uni.camera_pos.data, assets.transform_vector(rotmat_rev, [0,0,speed*e.deltaY]));
+});
 
 for (const name in paths) {
     document.getElementById("buttons").innerHTML += `
