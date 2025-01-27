@@ -27,7 +27,12 @@
     </head>
     <body>
         <canvas id="canvas"></canvas>    
-        <div id="buttons"></div>
+        <div id="buttons">
+            <input name="floor0" type="checkbox" onclick="assets.set_floor(0, this.checked ? 0 : -1)" checked><label for="floor0">Földszint</label><br>
+            <input name="floor1" type="checkbox" onclick="assets.set_floor(1, this.checked ? 0 : -1)" checked><label for="floor1">1. emelet</label><br>
+            <input name="floor2" type="checkbox" onclick="assets.set_floor(2, this.checked ? 0 : -1)" checked><label for="floor2">2. emelet</label><br>
+            <input name="floor3" type="checkbox" onclick="assets.set_floor(3, this.checked ? 0 : -1)" checked><label for="floor3">3. emelet</label><br>
+        </div>
         
         <script src="./assets.js"></script>
         <script src="./data.js"></script>

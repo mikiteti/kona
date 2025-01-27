@@ -53,14 +53,14 @@ document.addEventListener("wheel", (e) => {
     uni.camera_pos.data = assets.add_vectors(uni.camera_pos.data, assets.transform_vector(rotmat_rev, [0,0,speed*e.deltaY/10]));
 });
 
-for (const name in paths) {
+for (const id in paths) {
     document.getElementById("buttons").innerHTML += `
-        <input type="checkbox" name="${name}" /><label for="${name}">${name}</label><br>
+        <input type="checkbox" class="path_handle" name="${id}" /><label for="${id}">${paths[id].name}</label><br>
     `;
 }
 
 document.addEventListener("click", (e) => {
-    if (e.target.matches("input")) {
+    if (e.target.matches("input.path_handle")) {
         assets.set_path(e.target.getAttribute("name"), e.target.checked);
     }
 });

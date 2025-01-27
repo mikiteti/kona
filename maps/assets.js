@@ -275,7 +275,10 @@ const assets = {
     },
 
     set_path(name, active) {
+        document.querySelector(`[name=${name}]`).checked = active;
+
         const path = paths[name];
+        console.log({name, path, paths});
 
         attr.active.data = attr.active.data.map(e => -1);
         path.active = active;
@@ -304,6 +307,20 @@ const assets = {
 
         assets.update_attr_data(attr.position);
         assets.update_attr_data(attr.type);
+        assets.update_attr_data(attr.active);
+    },
+
+    set_floor(num, active) {
+        for (const i in paths) {
+            if (paths[i].active) assets.set_path(i, false);
+        }
+
+        for (const n of nodes) {
+            if (n.floor == num && n.type < 2) {
+                assets.set_active(n, active);
+            }
+        }
+
         assets.update_attr_data(attr.active);
     },
 
